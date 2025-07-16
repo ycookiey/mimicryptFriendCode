@@ -1,0 +1,17 @@
+{
+  "name": "mimicryptfriendcode",
+  "version": "1.0.0",
+  "description": "Encrypt friend codes while maintaining their original format",
+  "main": "src/index.js",
+  "scripts": {
+    "encrypt": "node src/encrypt.js",
+    "build": "node src/build.js",
+    "dev": "node src/dev-server.js"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.3"
+  },
+  "keywords": ["encryption", "friend-code", "static-site"],
+  "author": "",
+  "license": "MIT"
+}
