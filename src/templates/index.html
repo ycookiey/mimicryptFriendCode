@@ -60,6 +60,16 @@
             font-weight: bold;
             color: #333;
         }
+        .steam-link {
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .steam-link:hover {
+            color: #0056b3;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -84,6 +94,27 @@
             alphanumeric_mixed: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
             alphanumeric_upper: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         };
+
+        const STEAM_ID64_BASE = 76561197960265728n;
+
+        function isSteamFriendCode(code) {
+            // Steamフレンドコードは数字のみで構成される
+            return /^\d+$/.test(code);
+        }
+
+        function getSteamProfileUrl(friendCode) {
+            // フレンドコードからSteamID64を計算
+            const steamId64 = BigInt(friendCode) + STEAM_ID64_BASE;
+            return `https://steamcommunity.com/profiles/${steamId64}`;
+        }
+
+        function formatCodeDisplay(code) {
+            if (isSteamFriendCode(code)) {
+                const profileUrl = getSteamProfileUrl(code);
+                return `<a href="${profileUrl}" target="_blank" class="steam-link">${code}</a>`;
+            }
+            return code;
+        }
 
         function generateKey(password, length, charset) {
             const key = [];
@@ -155,12 +186,12 @@
             try {
                 for (const [key, data] of Object.entries(window.ENCRYPTED_DATA)) {
                     const decrypted = await decryptCode(data.encrypted, password, data.format);
-                    
+
                     const codeDiv = document.createElement('div');
                     codeDiv.className = 'friend-code';
                     codeDiv.innerHTML = `
                         <div class="label">${key}:</div>
-                        <div class="decrypted">${decrypted}</div>
+                        <div class="decrypted">${formatCodeDisplay(decrypted)}</div>
                     `;
                     codesDiv.appendChild(codeDiv);
                 }
