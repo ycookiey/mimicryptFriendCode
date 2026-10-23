@@ -1,17 +1,19 @@
 {
   "name": "mimicryptfriendcode",
   "version": "1.0.0",
-  "description": "Encrypt friend codes while maintaining their original format",
-  "main": "src/index.js",
+  "description": "フレンドコードを元の長さと文字の種類のまま暗号化し、パスワードを入力すると復号する静的なページを作る",
   "scripts": {
     "encrypt": "node src/encrypt.js",
-    "build": "node src/build.js",
-    "dev": "node src/dev-server.js"
+    "build": "node src/build.js"
   },
   "devDependencies": {
     "dotenv": "^16.0.3"
   },
-  "keywords": ["encryption", "friend-code", "static-site"],
-  "author": "",
+  "keywords": ["encryption", "format-preserving-encryption", "friend-code", "static-site"],
+  "author": "ycookiey",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ycookiey/mimicryptFriendCode.git"
+  },
   "license": "MIT"
 }

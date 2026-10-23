@@ -98,12 +98,10 @@
         const STEAM_ID64_BASE = 76561197960265728n;
 
         function isSteamFriendCode(code) {
-            // Steamフレンドコードは数字のみで構成される
             return /^\d+$/.test(code);
         }
 
         function getSteamProfileUrl(friendCode) {
-            // フレンドコードからSteamID64を計算
             const steamId64 = BigInt(friendCode) + STEAM_ID64_BASE;
             return `https://steamcommunity.com/profiles/${steamId64}`;
         }
@@ -114,19 +112,6 @@
                 return `<a href="${profileUrl}" target="_blank" class="steam-link">${code}</a>`;
             }
             return code;
-        }
-
-        function generateKey(password, length, charset) {
-            const key = [];
-            
-            for (let i = 0; i < length; i++) {
-                const input = password + i.toString();
-                const hash = sha256(input);
-                const index = parseInt(hash.substring(0, 8), 16) % charset.length;
-                key.push(charset[index]);
-            }
-            
-            return key.join('');
         }
 
         function sha256(str) {
@@ -200,12 +185,10 @@
             }
         }
 
-        // Initialize display on load
         window.addEventListener('load', function() {
             displayInitialCodes();
         });
         
-        // Auto-decrypt on password input
         document.getElementById('password').addEventListener('input', function() {
             const password = this.value;
             if (password) {
