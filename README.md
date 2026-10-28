@@ -7,7 +7,6 @@
 - 数字だけのコードは数字だけの暗号文に、英字と数字のコードは同じ種類の英字と数字の暗号文に変わる。長さは変わらない
 - 1つのパスワードで、`.env`に書いたすべてのコードを暗号化する。日本語のパスワードも使える
 - 復号はブラウザの中で計算し、パスワードを外部に送信しない
-- パスワードの欄に1文字入力するたびに、すべてのコードを復号して表示し直す
 - 数字だけのコードはSteamのフレンドコードとみなし、Steamのプロフィールへのリンクにする
 
 ## 使い方
@@ -40,12 +39,7 @@ npm run build     # encrypted-data.jsonを埋め込んだdist/index.htmlを作�
 
 ## 公開
 
-`.github/workflows/deploy.yml`は、`main`へのpushか手動の実行で、暗号化してページを作ってから、`dist/`をAmazon S3のバケットに同期する。同期では、`dist/`に無いファイルをバケットから削除する。リポジトリのActionsのsecretsに次の5つを登録する。
-
-- `ENV_FILE`: `.env`の内容全体
-- `AWS_ACCESS_KEY_ID`と`AWS_SECRET_ACCESS_KEY`: バケットのファイルの一覧の取得・書き込み・削除ができるIAMユーザーのアクセスキー
-- `AWS_REGION`: バケットのリージョン
-- `S3_BUCKET_NAME`: バケットの名前
+`dist/index.html`は暗号文を埋め込んだ1つの静的なHTMLのページで、HTTPSで配信できるWebサーバーならどこにでも置ける。ページをAmazon S3に置くworkflowを再利用する場合、必要なsecretsは`.github/workflows/deploy.yml`を参照。
 
 復号にはブラウザのWeb Crypto APIを使うため、ページを配信するにはHTTPSが必要。localhost以外をHTTPで開いたページでは、正しいパスワードを入力しても「復号に失敗しました。パスワードを確認してください。」と表示される。S3の静的ウェブサイトのエンドポイントはHTTPSで開けない。HTTPSで配信する方法は[AWSの文書](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteEndpoints.html)を参照。
 
@@ -57,9 +51,8 @@ npm run build     # encrypted-data.jsonを埋め込んだdist/index.htmlを作�
   - 元のコードを1つ知る人は、パスワードの候補を手元で試し、正しいパスワードかを判定できる
   - 暗号文から、元のコードの長さと文字の種類が分かる
 - 誤ったパスワードを入力しても、エラーにならず、元とは違うコードを表示する。数字だけのコードは関係のないSteamのプロフィールへのリンクとして表示される
-- Steam以外のサービスのコードでも、数字だけならSteamのプロフィールへのリンクとして表示される
 - パスワードの欄は入力した文字を伏せずに表示する
-- `ENV_FILE`の内容はworkflowの中でシェルの`echo "..."`に埋め込まれる。`"`・`$`・`` ` ``を含めると、シェルが解釈し、作られる`.env`の内容が変わるか、workflowが失敗する
+- secretsの`ENV_FILE`に登録した`.env`の内容は、workflowの中でシェルの`echo "..."`に埋め込まれる。`"`・`$`・`` ` ``を含めると、シェルが解釈し、作られる`.env`の内容が変わるか、workflowが失敗する
 
 ## ライセンス
 
