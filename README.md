@@ -1,168 +1,59 @@
 # mimicryptFriendCode
 
-フレンドコードを元の形式を保ったまま安全に暗号化・復号するシステム。
+ゲームなどのフレンドコードを、元の長さと文字の種類のまま暗号化するツール。暗号文を載せたHTMLのページを1つ作り、正しいパスワードを入力した人のブラウザにだけ元のコードを表示する。
 
 ## 特徴
 
-- **形式保持**: 数字のみのコードは暗号化後も数字のみ
-- **統一パスワード**: 1つのマスターパスワードで全てのフレンドコードを管理
-- **加法暗号**: 数学的に確実な可逆暗号化
-- **日本語対応**: 日本語パスワードに完全対応
-- **静的サイト対応**: GitHub Actions + S3で自動デプロイ
-- **リアルタイム復号**: パスワード入力と同時に自動復号
+- 数字だけのコードは数字だけの暗号文に、英字と数字のコードは同じ種類の英字と数字の暗号文に変わる。長さは変わらない
+- 1つのパスワードで、`.env`に書いたすべてのコードを暗号化する。日本語のパスワードも使える
+- 復号はブラウザの中で計算し、パスワードを外部に送信しない
+- 数字だけのコードはSteamのフレンドコードとみなし、Steamのプロフィールへのリンクにする
 
-## セットアップ
+## 使い方
 
-1. 依存関係のインストール
+Node.jsとnpmが必要。
+
 ```bash
+git clone https://github.com/ycookiey/mimicryptFriendCode.git
+cd mimicryptFriendCode
 npm install
-```
-
-2. .envファイルの設定
-```bash
 cp .env.example .env
-# .envファイルを編集してマスターパスワードとフレンドコードを設定
 ```
 
-3. 暗号化の実行
-```bash
-npm run encrypt
-```
-
-4. 静的サイトのビルド
-```bash
-npm run build
-```
-
-## .envファイルの形式
+`.env`にパスワードとフレンドコードを書く。名前が`_FC`で終わる行の値を暗号化する。名前はページに見出しとして表示される。`.env`は`.gitignore`でgitの管理から外してある。
 
 ```
-# マスターパスワード（全フレンドコード共通）
 MASTER_PASSWORD=your_secure_master_password_here
-
-# フレンドコード設定
-IDENTIFIER_FC=フレンドコード
-
-# 例
-NINTENDO_FC=1234567890123456
-DISCORD_FC=username#1234
-GAME_FC=987654321
+GAME_A_FC=123456789012
+GAME_B_FC=ab12cd34ef
 ```
 
-## 使用方法
+暗号化してから、ページを作る。
 
-1. `.env`ファイルにマスターパスワードとフレンドコードを設定
-2. `npm run encrypt`で暗号化データを生成
-3. `npm run build`で静的サイトを生成
-4. `dist/index.html`をブラウザで開く
-5. マスターパスワードを入力すると自動的に復号される
+```bash
+npm run encrypt   # 暗号文をencrypted-data.jsonに書き出す
+npm run build     # encrypted-data.jsonを埋め込んだdist/index.htmlを作る
+```
 
-## デプロイ設定
+`dist/index.html`をブラウザで開くと、暗号文が表示される。正しいパスワードを入力すると、元のコードが表示される。
 
-### AWS S3バケットの作成
+## 公開
 
-1. **S3バケットの作成**
-   - AWS ConsoleでS3サービスを開く
-   - 「バケットを作成」をクリック
-   - バケット名を入力（例: `my-mimicryptfriendcode-site`）
-   - リージョンを選択（例: `ap-northeast-1`）
-   - 「バケットを作成」をクリック
+`dist/index.html`は暗号文を埋め込んだ1つの静的なHTMLのページで、HTTPSで配信できるWebサーバーならどこにでも置ける。ページをAmazon S3に置くworkflowを再利用する場合、必要なsecretsは`.github/workflows/deploy.yml`を参照。
 
-2. **静的ウェブサイトホスティングの有効化**
-   - 作成したバケットを選択
-   - 「プロパティ」タブをクリック
-   - 「静的ウェブサイトホスティング」を「有効」に設定
-   - インデックスドキュメント: `index.html`
-   - 「変更を保存」をクリック
+復号にはブラウザのWeb Crypto APIを使うため、ページを配信するにはHTTPSが必要。localhost以外をHTTPで開いたページでは、正しいパスワードを入力しても「復号に失敗しました。パスワードを確認してください。」と表示される。S3の静的ウェブサイトのエンドポイントはHTTPSで開けない。HTTPSで配信する方法は[AWSの文書](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteEndpoints.html)を参照。
 
-3. **バケットポリシーの設定**
-   - 「アクセス許可」タブをクリック
-   - 「バケットポリシー」を編集
-   - 以下のポリシーを追加（`YOUR_BUCKET_NAME`を実際のバケット名に変更）:
-   ```json
-   {
-     "Version": "2012-10-17",
-     "Statement": [
-       {
-         "Sid": "PublicReadGetObject",
-         "Effect": "Allow",
-         "Principal": "*",
-         "Action": "s3:GetObject",
-         "Resource": "arn:aws:s3:::YOUR_BUCKET_NAME/*"
-       }
-     ]
-   }
-   ```
+## 既知の制限
 
-### AWS IAMユーザーの作成
+- 暗号化できるのは0-9・a-z・A-Zだけでできていて、数字を1文字以上含むコードだけ。数字を含まないコードでは、`npm run encrypt`がエラーで止まる。数字を含むコードに記号・空白・日本語が混ざると、エラーにならずに暗号化されるが、復号しても元の文字に戻らない
+- 暗号化では、コードの文字と鍵の文字を、文字の種類の中での番号に直して足し、文字の種類の数で割った余りを暗号文の文字にする。鍵はパスワードと文字の位置からSHA-256で作り、ソルトもストレッチングも使わない。鍵の作り方には次の弱点がある
+  - 鍵はコードごとに変わらない。元のコードを1つ知る人は、パスワードを知らなくても、同じ文字の種類のほかのコードを、先頭から知っているコードの長さの分まで復号できる
+  - 元のコードを1つ知る人は、パスワードの候補を手元で試し、正しいパスワードかを判定できる
+  - 暗号文から、元のコードの長さと文字の種類が分かる
+- 誤ったパスワードを入力しても、エラーにならず、元とは違うコードを表示する。数字だけのコードは関係のないSteamのプロフィールへのリンクとして表示される
+- パスワードの欄は入力した文字を伏せずに表示する
+- secretsの`ENV_FILE`に登録した`.env`の内容は、workflowの中でシェルの`echo "..."`に埋め込まれる。`"`・`$`・`` ` ``を含めると、シェルが解釈し、作られる`.env`の内容が変わるか、workflowが失敗する
 
-1. **IAMユーザーの作成**
-   - AWS ConsoleでIAMサービスを開く
-   - 「ユーザー」→「ユーザーを追加」
-   - ユーザー名を入力（例: `mimicryptfriendcode-deploy`）
-   - 「アクセスキー - プログラムによるアクセス」をチェック
-   - 「次のステップ」をクリック
+## ライセンス
 
-2. **権限の設定**
-   - 「既存のポリシーを直接アタッチ」を選択
-   - 「AmazonS3FullAccess」を検索して選択
-   - 「次のステップ」をクリック
-   - 「ユーザーの作成」をクリック
-
-3. **アクセスキーの取得**
-   - 作成完了画面で「アクセスキーID」と「シークレットアクセスキー」をメモ
-   - **重要**: この画面でのみ確認可能なので必ず保存
-
-### GitHub Secretsの設定
-
-1. **GitHubリポジトリの設定**
-   - GitHubのリポジトリページを開く
-   - 「Settings」→「Secrets and variables」→「Actions」
-
-2. **以下のSecretsを追加**
-   - `ENV_FILE`: .envファイルの内容全体
-     ```
-     MASTER_PASSWORD=your_secure_master_password_here
-     NINTENDO_FC=1234567890123456
-     DISCORD_FC=username#1234
-     ```
-   - `AWS_ACCESS_KEY_ID`: IAMユーザーのアクセスキーID
-   - `AWS_SECRET_ACCESS_KEY`: IAMユーザーのシークレットアクセスキー
-   - `AWS_REGION`: S3バケットのリージョン（例: `ap-northeast-1`）
-   - `S3_BUCKET_NAME`: S3バケット名
-
-### デプロイの実行
-
-1. **自動デプロイ**
-   - `main`ブランチにプッシュすると自動的にデプロイが実行されます
-   - GitHub Actionsの「Actions」タブで実行状況を確認できます
-
-2. **手動デプロイ**
-   - GitHub Actionsの「Actions」タブを開く
-   - 「Deploy to S3」ワークフローを選択
-   - 「Run workflow」をクリック
-
-3. **サイトの確認**
-   - S3バケットの静的ウェブサイトURLでアクセス可能
-   - URL形式: `http://YOUR_BUCKET_NAME.s3-website-REGION.amazonaws.com`
-
-## 対応フォーマット
-
-- `numeric`: 数字のみ (0-9)
-- `alphanumeric_lower`: 小文字英数字 (0-9, a-z)
-- `alphanumeric_upper`: 大文字英数字 (0-9, A-Z)
-- `alphanumeric_mixed`: 大小文字英数字 (0-9, a-z, A-Z)
-
-## セキュリティ
-
-- マスターパスワードは暗号化されたデータに含まれない
-- 加法暗号で元の形式を完全に保持
-- SHA-256ハッシュベースの鍵生成
-- 日本語パスワードの完全サポート
-
-## 技術仕様
-
-- **暗号化方式**: 加法暗号 `(original + key) % charset_length`
-- **復号方式**: 減法復号 `(encrypted - key + charset_length) % charset_length`
-- **鍵生成**: SHA-256ハッシュベース
-- **文字エンコーディング**: UTF-8
+[MIT License](LICENSE)

@@ -1,7 +1,4 @@
-/**
- * mimicryptFriendCode - Format-preserving encryption for friend codes
- */
-
+// ブラウザで復号するsrc/templates/index.htmlにも、同じCHARACTER_SETSと鍵の作り方を書いてある。片方だけ変えると復号できなくなる
 const CHARACTER_SETS = {
   numeric: '0123456789',
   alphanumeric_lower: '0123456789abcdefghijklmnopqrstuvwxyz',
